@@ -9,6 +9,7 @@
 # Usage: ./nvme_fw_upgrade.sh [OPTIONS]
 # Options:
 #   -h, --help              Show this help message
+#   --version               Show version information
 #   -i, --info              Print information about available drives
 #   -m, --manual            Disable version and dependency checks
 #   --ignore-ssl-errors     Ignore HTTPS/SSL errors
@@ -142,14 +143,17 @@ install_dependencies() {
         
         if [[ -f /etc/os-release ]]; then
             . /etc/os-release
-            case "$ID" in
-                arch|manjaro)
+            # Use ID_LIKE for better compatibility with derived distros
+            local distro_id="${ID_LIKE:-$ID}"
+            
+            case "$distro_id" in
+                *arch*)
                     install_dependencies_arch || return 1
                     ;;
-                debian|ubuntu|linuxmint)
+                *debian*|*ubuntu*|*mint*)
                     install_dependencies_debian || return 1
                     ;;
-                fedora|rhel|centos)
+                *fedora*|*rhel*|*centos*)
                     install_dependencies_fedora || return 1
                     ;;
                 *)
@@ -399,22 +403,48 @@ ask_fw_version() {
         return 1
     fi
     
-    # Extract version number from current firmware
+    # Extract version number from current firmware by removing "WD" suffix
     current_fw_int="${CURRENT_FW%WD}"
     
     log_debug "Current FW version (int): $current_fw_int"
     
     # Parse available versions from URLs
+    # Python does: url.split("/")[3] which gets the 4th path component
+    # Example: https://sddashboarddownloads.sandisk.com/wdDashboard/firmware/WD_Black_SN850X/070015WD/device_properties.xml
+    # Split by / and get element [6] (0-indexed): 070015WD
     for url in "${FIRMWARE_URLS[@]}"; do
-        local version=$(echo "$url" | grep -o 'v[0-9]*' | sed 's/v//')
+        # Split URL by / and extract the version (4th path component after domain)
+        local version
+        version=$(echo "$url" | awk -F'/' '{print $(NF-1)}')
         
         if [[ -z "$version" ]]; then
-            version=$(echo "$url" | awk -F'/' '{print $(NF-1)}')
+            log_debug "Failed to extract version from URL: $url"
+            continue
         fi
         
+        # Convert version to int by removing "WD" suffix for comparison
+        local version_int="${version%WD}"
+        
         # Add only newer versions or all in manual mode
-        if [[ "$MANUAL_MODE" == "true" ]] || [[ -z "$current_fw_int" ]] || ((version > current_fw_int)); then
-            fw_versions+=("$version")
+        if [[ "$MANUAL_MODE" == "true" ]]; then
+            # Manual mode: add all versions
+            if ! [[ " ${fw_versions[@]} " =~ " $version " ]]; then
+                fw_versions+=("$version")
+            fi
+        elif [[ -z "$current_fw_int" ]]; then
+            # No current version: add all
+            if ! [[ " ${fw_versions[@]} " =~ " $version " ]]; then
+                fw_versions+=("$version")
+            fi
+        else
+            # Normal mode: only add newer versions (numeric comparison)
+            if [[ "$version_int" =~ ^[0-9]+$ ]] && [[ "$current_fw_int" =~ ^[0-9]+$ ]]; then
+                if ((version_int > current_fw_int)); then
+                    if ! [[ " ${fw_versions[@]} " =~ " $version " ]]; then
+                        fw_versions+=("$version")
+                    fi
+                fi
+            fi
         fi
     done
     
@@ -690,6 +720,7 @@ Usage: $SCRIPT_NAME [OPTIONS]
 
 Options:
   -h, --help              Show this help message
+  --version               Show version information
   -i, --info              Print information about available drives
   -m, --manual            Disable version and dependency checks
   --ignore-ssl-errors     Ignore HTTPS/SSL errors (e.g. expired certificate)
@@ -776,6 +807,10 @@ main() {
         case "$1" in
             -h|--help)
                 print_help
+                exit 0
+                ;;
+            --version)
+                echo "$SCRIPT_NAME $SCRIPT_VERSION"
                 exit 0
                 ;;
             -i|--info)
