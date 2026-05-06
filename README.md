@@ -6,11 +6,11 @@ Automated NVMe firmware updater for Western Digital SSDs on Linux. Features depe
 **⚠️ FIRMWARE UPDATES CAN POTENTIALLY DAMAGE YOUR DRIVE AND CAUSE DATA LOSS! ⚠️**
 
 Before proceeding with any firmware update:
-- **⚠️ BACK UP ALL IMPORTANT DATA FIRST** — There is a risk of data loss during firmware updates
-- **⚠️ VERIFY YOU HAVE THE CORRECT FIRMWARE** — Using the wrong firmware can brick your drive
-- **⚠️ SELECT THE CORRECT DRIVE** — Double-check you're updating the intended NVMe device
-- **⚠️ UNDERSTAND THE RISKS** — Some drives may become unbootable if the update fails
-- **⚠️ HAVE A RECOVERY PLAN** — In case the update fails, be prepared to recover your system
+- **BACK UP ALL IMPORTANT DATA FIRST** — There is a risk of data loss during firmware updates
+- **VERIFY YOU HAVE THE CORRECT FIRMWARE** — Using the wrong firmware can brick your drive
+- **SELECT THE CORRECT DRIVE** — Double-check you're updating the intended NVMe device
+- **UNDERSTAND THE RISKS** — Some drives may become unbootable if the update fails
+- **HAVE A RECOVERY PLAN** — In case the update fails, be prepared to recover your system
 
 This tool is provided **AS-IS** without warranty of any kind. The authors are not responsible for any damage that may occur.
 
@@ -111,3 +111,12 @@ chmod +x nvme_fw_upgrade.sh
 - The script now defaults to slot 2 and mode 3 (immediate activation) when supported
 - Professional banner with safety warnings displayed before all operations
 - Improved column-aligned output for better readability
+
+## Screenshots
+I tested this on a Framework 16 Laptop with both my NVMEs:
+
+1) Viewing device information:
+<img width="870" height="880" alt="image" src="https://github.com/user-attachments/assets/0be1512c-310a-4f90-8eef-5bb613d05bf0" />
+
+2) Performing a forced update:
+<img width="1138" height="1294" alt="image" src="https://github.com/user-attachments/assets/d73fc261-5ad3-47df-ab6f-b8387202d583" />
